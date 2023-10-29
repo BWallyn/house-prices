@@ -1,0 +1,59 @@
+# Here you can define all your data sets by using simple YAML syntax.
+#
+# Documentation for this file format can be found in "The Data Catalog"
+# Link: https://docs.kedro.org/en/stable/data/data_catalog.html
+
+train_raw_data:
+  type: pandas.CSVDataSet
+  filepath: data/01_raw/train.csv
+  layer: raw
+
+test_raw_data:
+  type: pandas.CSVDataSet
+  filepath: data/01_raw/test.csv
+  layer: raw
+
+split_train:
+  type: pandas.CSVDataSet
+  filepath: data/03_primary/train_split.pkl
+  layer: primary
+
+split_valid:
+  type: pandas.CSVDataSet
+  filepath: data/03_primary/valid_split.pkl
+  layer: primary
+
+split_test:
+  type: pandas.CSVDataSet
+  filepath: data/03_primary/test_split.pkl
+  layer: primary
+
+processed_train:
+  type: pandas.CSVDataSet
+  filepath: data/04_features/train_feat.pkl
+  layer: features
+
+processed_valid:
+  type: pandas.CSVDataSet
+  filepath: data/04_features/valid_feat.pkl
+  layer: features
+
+processed_test:
+  type: pandas.CSVDataSet
+  filepath: data/04_features/test_feat.pkl
+  layer: features
+
+train_data:
+  type: pandas.CSVDataSet
+  filepath: data/05_model_input/df_train.pkl
+  layer: model_input
+
+valid_data:
+  type: pandas.CSVDataSet
+  filepath: data/05_model_input/df_valid.pkl
+  layer: model_input
+
+test_data:
+  type: pandas.CSVDataSet
+  filepath: data/05_model_input/df_test.pkl
+  layer: model_input
