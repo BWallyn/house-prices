@@ -13,6 +13,8 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.compose import ColumnTransformer, TransformedTargetRegressor
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.impute import SimpleImputer
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import cross_validate
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OrdinalEncoder
 
@@ -93,7 +95,12 @@ def remove_outliers(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def create_feats(df: pd.DataFrame) -> pd.DataFrame:
-    """
+    """Create new features based on other features
+
+    Args:
+        df: DataFrame
+    Returns:
+        df: DataFrame with new features
     """
     # Is present
     df["BsmtFinType1_Unf"] = 1 * (df["BsmtFinType1"] == "Unf")
@@ -121,7 +128,10 @@ def create_feats(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def feature_imputer():
-    """
+    """Create a feature imputer for the missing values
+
+    Returns:
+        feat_imp: Feature imputer element from sklearn
     """
     feat_imp = ColumnTransformer(
         [
@@ -165,6 +175,9 @@ def feature_imputer():
 
 def column_transformer():
     """Create a column transformer
+
+    Returns:
+        col_transf: Column transformer element from sklearn
     """
     col_transf = ColumnTransformer(
         [
@@ -185,7 +198,14 @@ def column_transformer():
 
 
 def pipe_estimator(feat_imp: ColumnTransformer, col_transf: ColumnTransformer, **kwargs):
-    """
+    """Create a regressor estimator from sklearn using a pipeline
+
+    Args:
+        feat_imp: Feature imputer element
+        col_transf: Column transformer element
+        **kwargs: Hyperparameters for the HistGradientBoosting method
+    Returns:
+        estimator: Estimator element from sklearn
     """
     estimator = Pipeline(
         steps=[
@@ -198,3 +218,34 @@ def pipe_estimator(feat_imp: ColumnTransformer, col_transf: ColumnTransformer, *
         ]
     ).set_output(transform="pandas")
     return estimator
+
+
+def run_cross_val(estimator: Pipeline, df: pd.DataFrame, target: pd.Series, **kwargs) -> dict[np.array]:
+    """Run the estimator on cross validation
+    """
+    scoring = ['neg_root_mean_squared_error']
+    scores = cross_validate(estimator, X=df, y=target, scoring=scoring, **kwargs)
+    return scores
+
+
+def train_model(df_train: pd.DataFrame, params_hgb: dict) -> Pipeline:
+    """
+    """
+    # Prepare data
+    y_train = df_train["SalePrice"]
+    df_train.drop(columns=["SalePrice"], inplace=True)
+    # Create pipeline
+    feat_imp = feature_imputer()
+    col_transf = column_transformer()
+    estimator = pipe_estimator(feat_imp=feat_imp, col_transf=col_transf, **params_hgb)
+    # Train model
+    estimator.fit(df_train, y_train)
+    return estimator
+
+
+def predict_model(estimator: Pipeline, df: pd.DataFrame) -> pd.Series:
+    """
+    """
+    # Predict
+    pred = estimator.predict(df)
+    return pred
