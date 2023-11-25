@@ -127,6 +127,18 @@ def create_feats(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def feature_engineering(df: pd.DataFrame) -> pd.DataFrame:
+    """Remove outliers and create new features
+
+    Args:
+        df: DataFrame
+    Returns:
+        df: DataFrame without outliers and with new features
+    """
+    df = df.pipe(remove_outliers).pipe(create_feats)
+    return df
+
+
 def feature_imputer():
     """Create a feature imputer for the missing values
 
@@ -138,7 +150,7 @@ def feature_imputer():
             ('functional', SimpleImputer(strategy="constant", fill_value="Typ"), ["Functional"]),
             ('mode', SimpleImputer(strategy='most_frequent'), ["Electrical", "KitchenQual", "Exterior1st", "Exterior2nd", "SaleType", "MSZoning"]),
             ('pool', SimpleImputer(strategy="constant", fill_value='No'), ["PoolQC"]),
-            ('garage_count', SimpleImputer(strategy="constant", fill_value=0), ["GarageYrBlt", "GarageArea", "GarageCars"]),
+            ('grg_count', SimpleImputer(strategy="constant", fill_value=0), ["GarageYrBlt", "GarageArea", "GarageCars"]),
             ('garage', SimpleImputer(strategy='constant', fill_value='No'), ["GarageType", "GarageFinish", "GarageQual", "GarageCond"]),
             ('bsmt', SimpleImputer(strategy='constant', fill_value='No'), ['BsmtQual', 'BsmtCond', 'BsmtExposure', 'BsmtFinType1', 'BsmtFinType2']),
             ('lot_front', SimpleImputer(strategy="mean"), ["LotFrontage"]),
@@ -159,14 +171,18 @@ def feature_imputer():
 #                 'functional__Functional',
 #                 'mode__Electrical', 'mode__KitchenQual', 'mode__Exterior1st', 'mode__Exterior2nd', 'mode__SaleType', 'mode__MSZoning',
 #                 'pool__PoolQC',
+#                 'grg_count__GarageYrBlt', 'grg_count__GarageArea', 'grg_count__GarageCars',
 #                 'garage__GarageType', 'garage__GarageFinish', 'garage__GarageQual', 'garage__GarageCond',
 #                 'bsmt__BsmtQual', 'bsmt__BsmtCond', 'bsmt__BsmtExposure', 'bsmt__BsmtFinType1', 'bsmt__BsmtFinType2',
-#                 'Street', 'Alley', 'LotShape', 'LandContour', 'Utilities',
+#                 'lot_front__LotFrontage',
+#                 'other_cat__MiscFeature', 'other_cat__Alley', 'other_cat__Fence', 'other_cat__MasVnrType', 'other_cat__FireplaceQu',
+#                 'other_cont__MasVnrArea',
+#                 'Street', 'LotShape', 'LandContour', 'Utilities',
 #                 'LotConfig', 'LandSlope', 'Neighborhood', 'Condition1', 'Condition2',
 #                 'BldgType', 'HouseStyle', 'RoofStyle', 'RoofMatl',
-#                 'MasVnrType', 'ExterQual', 'ExterCond', 'Foundation',
+#                 'ExterQual', 'ExterCond', 'Foundation',
 #                 'Heating', 'HeatingQC', 'CentralAir', 'KitchenQual',
-#                 'FireplaceQu', 'PavedDrive', 'Fence', 'MiscFeature',
+#                 'PavedDrive',
 #                 'SaleCondition'
 #             ])
 #         ], remainder='passthrough',
@@ -229,7 +245,13 @@ def run_cross_val(estimator: Pipeline, df: pd.DataFrame, target: pd.Series, **kw
 
 
 def train_model(df_train: pd.DataFrame, params_hgb: dict) -> Pipeline:
-    """
+    """Train the model
+
+    Args:
+        df_train: Train dataset
+        params_hgb: Parameters for the HistGradientBoosting
+    Returns:
+        estimator: HistGradientBoosting trained
     """
     # Prepare data
     y_train = df_train["SalePrice"]
@@ -246,6 +268,8 @@ def train_model(df_train: pd.DataFrame, params_hgb: dict) -> Pipeline:
 def predict_model(estimator: Pipeline, df: pd.DataFrame) -> pd.Series:
     """
     """
+    # Get input features
+    list_inputs = estimator.feature_names_in_
     # Predict
-    pred = estimator.predict(df)
+    pred = estimator.predict(df[list_inputs])
     return pred
