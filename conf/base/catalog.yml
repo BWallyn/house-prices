@@ -14,46 +14,62 @@ test_raw_data:
   layer: raw
 
 split_train:
-  type: pandas.CSVDataSet
+  type: pandas.ParquetDataSet
   filepath: data/03_primary/train_split.pkl
   layer: primary
 
 split_valid:
-  type: pandas.CSVDataSet
+  type: pandas.ParquetDataSet
   filepath: data/03_primary/valid_split.pkl
   layer: primary
 
 split_test:
-  type: pandas.CSVDataSet
+  type: pandas.ParquetDataSet
   filepath: data/03_primary/test_split.pkl
   layer: primary
 
 processed_train:
-  type: pandas.CSVDataSet
+  type: pandas.ParquetDataSet
   filepath: data/04_features/train_feat.pkl
   layer: features
 
 processed_valid:
-  type: pandas.CSVDataSet
+  type: pandas.ParquetDataSet
   filepath: data/04_features/valid_feat.pkl
   layer: features
 
 processed_test:
-  type: pandas.CSVDataSet
+  type: pandas.ParquetDataSet
   filepath: data/04_features/test_feat.pkl
   layer: features
 
 train_data:
-  type: pandas.CSVDataSet
+  type: pandas.ParquetDataSet
   filepath: data/05_model_input/df_train.pkl
   layer: model_input
 
 valid_data:
-  type: pandas.CSVDataSet
+  type: pandas.ParquetDataSet
   filepath: data/05_model_input/df_valid.pkl
   layer: model_input
 
 test_data:
-  type: pandas.CSVDataSet
+  type: pandas.ParquetDataSet
   filepath: data/05_model_input/df_test.pkl
   layer: model_input
+
+ml_model:
+  type: pickle.PickleDataSet
+  filepath: data/06_models/ml_model.pkl
+  backend: pickle
+  layer: models
+
+pred-train:
+  type: pandas.CSVDataSet
+  filepath: data/07_model_output/pred_train.csv
+  layer: model_output
+
+pred_test:
+  type: pamdas.CSVDataSet
+  filepath: data/07_model_output/pred_test.csv
+  layer: model_output
