@@ -1,0 +1,14 @@
+params_hgb: {
+    "max_iter": 1000,
+    "max_depth": 7,
+    "feat_cat": ['MSZoning', 'Street', 'Alley', 'LotShape', 'LandContour', 'Utilities',
+        'LotConfig', 'LandSlope', 'Neighborhood', 'Condition1', 'Condition2',
+        'BldgType', 'HouseStyle', 'RoofStyle', 'RoofMatl', 'Exterior1st',
+        'Exterior2nd', 'MasVnrType', 'ExterQual', 'ExterCond', 'Foundation',
+        'BsmtQual', 'BsmtCond', 'BsmtExposure', 'BsmtFinType1', 'BsmtFinType2',
+        'Heating', 'HeatingQC', 'CentralAir', 'Electrical', 'KitchenQual',
+        'Functional', 'FireplaceQu', 'GarageType', 'GarageFinish', 'GarageQual',
+        'GarageCond', 'PavedDrive', 'PoolQC', 'Fence', 'MiscFeature',
+        'SaleType', 'SaleCondition'
+    ]
+}
