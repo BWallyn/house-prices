@@ -64,12 +64,12 @@ ml_model:
   backend: pickle
   layer: models
 
-pred-train:
+pred_train:
   type: pandas.CSVDataSet
   filepath: data/07_model_output/pred_train.csv
   layer: model_output
 
 pred_test:
-  type: pamdas.CSVDataSet
+  type: pandas.CSVDataSet
   filepath: data/07_model_output/pred_test.csv
   layer: model_output
