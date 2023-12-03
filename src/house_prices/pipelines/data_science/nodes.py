@@ -19,67 +19,12 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OrdinalEncoder
 
 # from .class_meanimputergroup import WithinClassMeanImputer
+from class_hyperopt import hyperopt_mlflow
+
 
 # ===================
 # ==== FUNCTIONS ====
 # ===================
-
-class WithinClassMeanImputer(BaseEstimator, TransformerMixin):
-    def __init__(self, replace_col_index, class_col_index: str=None, missing_values=np.nan):
-        self.missing_values = missing_values
-        self.replace_col_index = replace_col_index
-        self.y = None
-        self.class_col_index = class_col_index
-
-    def fit(self, X, y = None):
-        self.y = y
-        return self
-
-    def transform(self, X):
-        y = self.y
-        classes = np.unique(y)
-        stacks = []
-
-        if len(X) > 1 and len(self.y) == len(X):
-            if( self.class_col_index == None ):
-                # If we're using the dependent variable
-                for aclass in classes:
-                    with_missing = X[(y == aclass) & 
-                                        (X[:, self.replace_col_index] == self.missing_values)]
-                    without_missing = X[(y == aclass) & 
-                                            (X[:, self.replace_col_index] != self.missing_values)]
-
-                    column = without_missing[:, self.replace_col_index]
-                    # Calculate mean from examples without missing values
-                    mean = np.mean(column[without_missing[:, self.replace_col_index] != self.missing_values])
-
-                    # Broadcast mean to all missing values
-                    with_missing[:, self.replace_col_index] = mean
-
-                    stacks.append(np.concatenate((with_missing, without_missing)))
-            else:
-                # If we're using nominal values within a binarised feature (i.e. the classes
-                # are unique values within a nominal column - e.g. sex)
-                for aclass in classes:
-                    with_missing = X[(X[:, self.class_col_index] == aclass) & 
-                                        (X[:, self.replace_col_index] == self.missing_values)]
-                    without_missing = X[(X[:, self.class_col_index] == aclass) & 
-                                            (X[:, self.replace_col_index] != self.missing_values)]
-
-                    column = without_missing[:, self.replace_col_index]
-                    # Calculate mean from examples without missing values
-                    mean = np.mean(column[without_missing[:, self.replace_col_index] != self.missing_values])
-
-                    # Broadcast mean to all missing values
-                    with_missing[:, self.replace_col_index] = mean
-                    stacks.append(np.concatenate((with_missing, without_missing)))
-
-            if len(stacks) > 1 :
-                # Reassemble our stacks of values
-                X = np.concatenate(stacks)
-
-        return X
-
 
 def remove_outliers(df: pd.DataFrame) -> pd.DataFrame:
     """Remove outliers
@@ -227,7 +172,7 @@ def pipe_estimator(feat_imp: ColumnTransformer, col_transf: ColumnTransformer, *
         steps=[
             ('feature_imp', feat_imp),
             ('column_transf', col_transf),
-            ('regressor', TransformedTargetRegressor(
+            ('model', TransformedTargetRegressor(
                 regressor=HistGradientBoostingRegressor(**kwargs),
                 func=np.log1p, inverse_func=np.expm1,
             )),
@@ -242,6 +187,25 @@ def run_cross_val(estimator: Pipeline, df: pd.DataFrame, target: pd.Series, **kw
     scoring = ['neg_root_mean_squared_error']
     scores = cross_validate(estimator, X=df, y=target, scoring=scoring, **kwargs)
     return scores
+
+
+def find_best_hyperparameters():
+    pass
+
+
+
+def recreate_training(df_train: pd.DataFrame, df_valid: pd.DataFrame) -> pd.DataFrame:
+    """Recreate the training dataset.
+    Merge train and validation into one dataset to create the training dataset.
+
+    Args:
+        df_train: Train dataset
+        df_valid: Validation dataset
+    Returns:
+        df_training: Training dataset
+    """
+    df_training = pd.concat([df_train, df_valid])
+    return df_training
 
 
 def train_model(df_train: pd.DataFrame, params_hgb: dict) -> Pipeline:
@@ -266,7 +230,13 @@ def train_model(df_train: pd.DataFrame, params_hgb: dict) -> Pipeline:
 
 
 def predict_model(estimator: Pipeline, df: pd.DataFrame) -> pd.Series:
-    """
+    """Predict using the estimator
+
+    Args:
+        estimator: HistGradientBoosting regressor trained
+        df: DataFrame
+    Returns:
+        pred: Prediction on the dataset
     """
     # Get input features
     list_inputs = estimator.feature_names_in_
