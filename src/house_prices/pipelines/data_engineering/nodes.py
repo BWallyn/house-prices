@@ -32,4 +32,3 @@ def split_training(df: pd.DataFrame, target_name: str) -> tuple[pd.DataFrame, pd
     df_train[target_name] = y_train
     df_valid[target_name] = y_valid
     return df_train, df_valid
-
