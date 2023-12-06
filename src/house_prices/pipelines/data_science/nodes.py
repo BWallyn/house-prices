@@ -6,9 +6,14 @@ generated using Kedro 0.18.14
 # ==== IMPORTS ====
 # =================
 
+# Essential
 import numpy as np
 import pandas as pd
 
+from typing import Any
+
+# Machine Learning
+from hyperopt import hp
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.compose import ColumnTransformer, TransformedTargetRegressor
 from sklearn.ensemble import HistGradientBoostingRegressor
@@ -19,7 +24,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OrdinalEncoder
 
 # from .class_meanimputergroup import WithinClassMeanImputer
-from class_hyperopt import hyperopt_mlflow
+from .class_hyperopt import hyperopt_mlflow
+from .class_mlflow import mlflow_run
 
 
 # ===================
@@ -72,15 +78,18 @@ def create_feats(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def feature_engineering(df: pd.DataFrame) -> pd.DataFrame:
+def feature_engineering(df: pd.DataFrame, remove_out: bool=False) -> pd.DataFrame:
     """Remove outliers and create new features
 
     Args:
         df: DataFrame
+        remove_out: Whether to remove outliers
     Returns:
         df: DataFrame without outliers and with new features
     """
-    df = df.pipe(remove_outliers).pipe(create_feats)
+    if remove_out:
+        df = df.pipe(remove_outliers)
+    df = df.pipe(create_feats)
     return df
 
 
@@ -183,15 +192,64 @@ def pipe_estimator(feat_imp: ColumnTransformer, col_transf: ColumnTransformer, *
 
 def run_cross_val(estimator: Pipeline, df: pd.DataFrame, target: pd.Series, **kwargs) -> dict[np.array]:
     """Run the estimator on cross validation
+
+    Args:
+        estimator: Estimator regressor
+        df: DataFrame
+        target: Target of the dataframe
+    Returns:
+        scores: Scores of the cross validation
     """
     scoring = ['neg_root_mean_squared_error']
     scores = cross_validate(estimator, X=df, y=target, scoring=scoring, **kwargs)
     return scores
 
 
-def find_best_hyperparameters():
-    pass
+def define_search_space() -> dict[str, Any]:
+    """Define the search space for the bayesian optimization
 
+    Returns:
+        : Search space
+    """
+    return {
+        'model__regressor__learning_rate': hp.loguniform('learning_rate', -5, 0),
+        'model__regressor__max_depth': hp.randint('max_depth', 2, 10),
+        'model__regressor__l2_regularization': hp.loguniform('l2_regularization', -3, 0),
+    }
+
+
+def find_best_hyperparameters(
+        search_space: dict[str, Any], df_train: pd.DataFrame, df_valid: pd.DataFrame,
+        max_evals: int=10, alpha: float=0., 
+    ) -> dict[str, Any]:
+    """Find the best hyperparameters using bayesian optimization
+
+    Args:
+        search_space: Search space of the hyperparameters for the bayesian optimization
+        df_train: Train dataset
+        df_valid: Validation dataset
+        max_evals: Number of evaluations for the bayesian optimization
+        alpha: Coefficient for the penalization
+    Returns:
+        best_hyperparameters: Best hyperparameters found by the bayesian optimization
+    """
+    estimator = pipe_estimator(feat_imp=feature_imputer(), col_transf=column_transformer())
+    # Prepare datasets
+    y_train = df_train["SalePrice"]
+    df_train.drop(columns=["SalePrice"], inplace=True)
+    y_valid = df_valid["SalePrice"]
+    df_valid.drop(columns=["SalePrice"], inplace=True)
+    # Categorical features
+    feat_cat = df_train.select_dtypes(exclude=['int16', 'int32', 'int64', 'float16', 'float32', 'float64']).columns.tolist()
+    feat_cat += [
+        "BsmtFinType1_Unf", "HasWoodDeck", "HasOpenPorch", "HasEnclosedPorch", "Has3SsnPorch", "HasScreenPorch",
+        "haspool", "has2ndfloor", "hasgarage", "hasbsmt", "hasfireplace",
+    ]
+    # Bayesian optimization
+    bay_opt = hyperopt_mlflow(run_name='opt_bayesian', max_evals=max_evals, alpha=alpha, verbose=0)
+    bay_opt.fit(estimator, search_space=search_space, df_train=df_train, y_train=y_train, df_eval=df_valid, y_eval=y_valid)
+    best_hyperparams = bay_opt.get_best_params()
+    return best_hyperparams
 
 
 def recreate_training(df_train: pd.DataFrame, df_valid: pd.DataFrame) -> pd.DataFrame:
@@ -206,6 +264,30 @@ def recreate_training(df_train: pd.DataFrame, df_valid: pd.DataFrame) -> pd.Data
     """
     df_training = pd.concat([df_train, df_valid])
     return df_training
+
+
+def train_model_mlflow(df_train: pd.DataFrame, df_test: pd.DataFrame, params_hgb: dict) -> Pipeline:
+    """Train model using mlflow
+
+    Args:
+        df_train: Train set
+        df_test: Test set
+        params_hgb: Parameters of the HistGradientBoostingRegressor
+    Returns:
+        : Model trained on train set
+    """
+    estimator = pipe_estimator(feat_imp=feature_imputer(), col_transf=column_transformer(), **params_hgb)
+    # Prepare dataset
+    y_train = df_train["SalePrice"]
+    df_train.drop(columns=["SalePrice"], inplace=True)
+    y_test = df_test["SalePrice"]
+    df_test.drop(["SalePrice"], inplace=True)
+    # Train estimator using MLfloe
+    est_mlflow = mlflow_run(model_name='house-prices', feat=df_train.columns, shap=False)
+    est_mlflow.fit(
+        model=estimator, df_train=df_train, y_train=y_train, df_eval=df_test, y_eval=y_test
+    )
+    return est_mlflow.model
 
 
 def train_model(df_train: pd.DataFrame, params_hgb: dict) -> Pipeline:
@@ -242,4 +324,5 @@ def predict_model(estimator: Pipeline, df: pd.DataFrame) -> pd.Series:
     list_inputs = estimator.feature_names_in_
     # Predict
     pred = estimator.predict(df[list_inputs])
-    return pred
+    df_pred = pd.Series(pred, index=df.index)
+    return df_pred
