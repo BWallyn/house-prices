@@ -311,7 +311,7 @@ def train_model(df_train: pd.DataFrame, params_hgb: dict) -> Pipeline:
     return estimator
 
 
-def predict_model(estimator: Pipeline, df: pd.DataFrame) -> pd.Series:
+def predict_model(estimator: Pipeline, df: pd.DataFrame) -> pd.DataFrame:
     """Predict using the estimator
 
     Args:
@@ -324,5 +324,5 @@ def predict_model(estimator: Pipeline, df: pd.DataFrame) -> pd.Series:
     list_inputs = estimator.feature_names_in_
     # Predict
     pred = estimator.predict(df[list_inputs])
-    df_pred = pd.Series(pred, index=df.index)
+    df_pred = pd.DataFrame(data={'Id': df["Id"].values, 'SalePrice': pred})
     return df_pred
