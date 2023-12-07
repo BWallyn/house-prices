@@ -1,5 +1,12 @@
 # house-prices
 
+## Introduction
+
+The goal of this project is to predict the sale price of houses, from Kaggle [House prices prediction](https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/overview).
+
+Firstly, the goal of this project is to use packages like MLflow to log experiments and Kedro to follow the overall process and run pipelines.
+
+
 ## Overview
 
 This is your new Kedro project, which was generated using `kedro 0.18.14`.
