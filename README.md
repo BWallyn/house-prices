@@ -1,4 +1,4 @@
-# house-prices
+# House prices
 
 ## Introduction
 
