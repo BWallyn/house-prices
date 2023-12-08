@@ -16,20 +16,22 @@ from sklearn.metrics import mean_squared_error, mean_absolute_percentage_error
 # ==== FUNCTIONS ====
 # ===================
 
-def evaluate_model(y_train: np.array, pred_train: np.array, y_eval: np.array, pred_eval: np.array):
-    """Evaluate the model on the train and eval sets
+def evaluate_model(y_true: np.array, y_pred: np.array):
+    """Evaluate the model on a dataset
 
     Args:
-        y_train: Target on the train set
-        pred_train: Prediction on the train set
-        y_eval: Target on the evaluation set
-        pred_eval: Prediction on the evaluation set
+        y_true: Target on the train set
+        y_pred: Prediction on the train set
     """
     dict_metrics = {
-        "rmse_train": mean_squared_error(y_train, pred_train, squared=False),
-        "rmse_eval": mean_squared_error(y_eval, pred_eval, squared=False),
-        "mape_train": mean_absolute_percentage_error(y_train, pred_train),
-        "mape_eval": mean_absolute_percentage_error(y_eval, pred_eval),
+        "rmse": mean_squared_error(y_true, y_pred, squared=False),
+        "mape": mean_absolute_percentage_error(y_true, y_pred),
     }
+    print("Metrics model:\n", dict_metrics)
     return dict_metrics
-    
+
+
+def evaluate_model_from_df(df: pd.DataFrame, target_name: str, y_pred: np.array):
+    """
+    """
+    return evaluate_model(y_true=df[target_name].values, y_pred=y_pred)
