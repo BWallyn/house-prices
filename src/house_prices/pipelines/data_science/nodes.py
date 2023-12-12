@@ -18,10 +18,9 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.compose import ColumnTransformer, TransformedTargetRegressor
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.impute import SimpleImputer
-from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import cross_validate
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OrdinalEncoder
+from sklearn.preprocessing import OrdinalEncoder, StandardScaler
 
 # from .class_meanimputergroup import WithinClassMeanImputer
 from .class_hyperopt import hyperopt_mlflow
@@ -121,7 +120,7 @@ def feature_imputer():
 #     """
 #     col_transf = ColumnTransformer(
 #         [
-#             ('ordinal_enc', OrdinalEncoder(handle_unknown='use_encoded_value'), [
+#             ('ordinal_enc', OrdinalEncoder(handle_unknown='use_encoded_value', unknown_value=np.nan), [
 #                 'functional__Functional',
 #                 'mode__Electrical', 'mode__KitchenQual', 'mode__Exterior1st', 'mode__Exterior2nd', 'mode__SaleType', 'mode__MSZoning',
 #                 'pool__PoolQC',
@@ -131,13 +130,11 @@ def feature_imputer():
 #                 'lot_front__LotFrontage',
 #                 'other_cat__MiscFeature', 'other_cat__Alley', 'other_cat__Fence', 'other_cat__MasVnrType', 'other_cat__FireplaceQu',
 #                 'other_cont__MasVnrArea',
-#                 'Street', 'LotShape', 'LandContour', 'Utilities',
-#                 'LotConfig', 'LandSlope', 'Neighborhood', 'Condition1', 'Condition2',
-#                 'BldgType', 'HouseStyle', 'RoofStyle', 'RoofMatl',
-#                 'ExterQual', 'ExterCond', 'Foundation',
-#                 'Heating', 'HeatingQC', 'CentralAir', 'KitchenQual',
-#                 'PavedDrive',
-#                 'SaleCondition'
+#                 'remainder__Street', 'remainder__LotShape', 'remainder__LandContour', 'remainder__Utilities',
+#                 'remainder__LotConfig', 'remainder__LandSlope', 'remainder__Neighborhood', 'remainder__Condition1', 'remainder__Condition2',
+#                 'remainder__BldgType', 'remainder__HouseStyle', 'remainder__RoofStyle', 'remainder__RoofMatl',
+#                 'remainder__ExterCond', 'remainder__ExterQual', 'remainder__Foundation', 'remainder__Heating', 'remainder__HeatingQC',
+#                 'remainder__CentralAir', 'remainder__PavedDrive', 'remainder__SaleCondition'
 #             ])
 #         ], remainder='passthrough',
 #     )
@@ -149,18 +146,47 @@ def column_transformer():
     Returns:
         col_transf: Column transformer element from sklearn
     """
+    # Options for encoding
+    qual_5_cat = ['Po', 'Fa', 'TA', 'Gd', 'Ex']
+    qual_6_cat = ['NA', 'Po', 'Fa', 'TA', 'Gd', 'Ex']
+    expo_5_cat = ['NA', 'No', 'Mn', 'Av', 'Gd']
+    rate_7_cat = ['NA', 'Unf', 'LwQ', 'Rec', 'BLQ', 'ALQ', 'GLQ']
+    fenc_4_cat = ['NA', 'MnWw', 'GdWo', 'MnPrv', 'GdPrv']
+    # Column transformer
     col_transf = ColumnTransformer(
         [
             ('ordinal_enc', OrdinalEncoder(handle_unknown='use_encoded_value', unknown_value=np.nan), [
                 'MSZoning', 'Street', 'Alley', 'LotShape', 'LandContour', 'Utilities',
                 'LotConfig', 'LandSlope', 'Neighborhood', 'Condition1', 'Condition2',
                 'BldgType', 'HouseStyle', 'RoofStyle', 'RoofMatl', 'Exterior1st',
-                'Exterior2nd', 'MasVnrType', 'ExterQual', 'ExterCond', 'Foundation',
+                'Exterior2nd', 'MasVnrType', 'Foundation',
                 'BsmtQual', 'BsmtCond', 'BsmtExposure', 'BsmtFinType1', 'BsmtFinType2',
                 'Heating', 'HeatingQC', 'CentralAir', 'Electrical', 'KitchenQual',
                 'Functional', 'FireplaceQu', 'GarageType', 'GarageFinish', 'GarageQual',
                 'GarageCond', 'PavedDrive', 'PoolQC', 'Fence', 'MiscFeature',
                 'SaleType', 'SaleCondition'
+            ]),
+            ('ordinal_enc_qual', OrdinalEncoder(
+                handle_unknown='use_encoded_value', unknown_value=np.nan,
+                categories=[
+                    qual_5_cat, qual_5_cat, qual_6_cat, qual_6_cat, expo_5_cat,
+                    rate_7_cat, rate_7_cat, qual_5_cat, qual_5_cat, qual_6_cat,
+                    qual_6_cat, qual_6_cat, qual_5_cat, fenc_4_cat,
+                ]
+            ), [
+                'ExterQual', 'ExterCond',
+                'BsmtQual', 'BsmtCond', 'BsmtExposure',
+                'BsmtFinType1', 'BsmtFinType2',
+                'HeatingQC', 'KitchenQual', 'FireplaceQu',
+                'GarageQual', 'GarageCond', 'PoolQC', 'Fence',
+            ]),
+            ('std_scal', StandardScaler(), [
+                "MiscVal", "PoolArea", "LotArea", "LowQualFinSF", "3SsnPorch", "KitchenAbvGr",
+                "EnclosedPorch", "ScreenPorch", "MasVnrArea",
+                "OpenPorchSF", "WoodDeckSF", "LotFrontage", "GrLivArea",
+                "BsmtFinSF1", "BsmtFinSF2", "BsmtUnfSF", "1stFlrSF", "2ndFlrSF",
+                "TotRmsAbvGrd", "Fireplaces", "HalfBath", "TotalBsmtSF",
+                "BsmtHalfBath", "BsmtFullBath", "OverallCond",
             ])
         ], remainder='passthrough', verbose_feature_names_out=False,
     )
