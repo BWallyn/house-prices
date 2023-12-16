@@ -15,47 +15,37 @@ test_raw_data:
 
 split_train:
   type: pandas.ParquetDataSet
-  filepath: data/03_primary/train_split.pkl
+  filepath: data/03_primary/train_split.parquet
   layer: primary
 
 split_valid:
   type: pandas.ParquetDataSet
-  filepath: data/03_primary/valid_split.pkl
-  layer: primary
-
-split_test:
-  type: pandas.ParquetDataSet
-  filepath: data/03_primary/test_split.pkl
+  filepath: data/03_primary/valid_split.parquet
   layer: primary
 
 processed_train:
   type: pandas.ParquetDataSet
-  filepath: data/04_features/train_feat.pkl
+  filepath: data/04_features/train_feat.parquet
   layer: features
 
 processed_valid:
   type: pandas.ParquetDataSet
-  filepath: data/04_features/valid_feat.pkl
-  layer: features
-
-processed_test:
-  type: pandas.ParquetDataSet
-  filepath: data/04_features/test_feat.pkl
+  filepath: data/04_features/valid_feat.parquet
   layer: features
 
 train_data:
   type: pandas.ParquetDataSet
-  filepath: data/05_model_input/df_train.pkl
+  filepath: data/05_model_input/df_train.parquet
   layer: model_input
 
 valid_data:
   type: pandas.ParquetDataSet
-  filepath: data/05_model_input/df_valid.pkl
+  filepath: data/05_model_input/df_valid.parquet
   layer: model_input
 
 test_data:
   type: pandas.ParquetDataSet
-  filepath: data/05_model_input/df_test.pkl
+  filepath: data/05_model_input/df_test.parquet
   layer: model_input
 
 ml_model:
